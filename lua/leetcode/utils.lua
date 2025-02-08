@@ -1,27 +1,50 @@
 local utils = {}
 
 utils.create_file = function(slug)
-    -- Define the file path
-    local file_path = vim.fn.expand("~/Desktop/newfile.txt")
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    
+    -- Set up terminal options
+    vim.api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
+    vim.api.nvim_buf_set_option(bufnr, 'swapfile', false)
+    
+    -- Create window configuration
+    local opts = {
+        -- relative = 'editor',
+        -- width = 40,
+        -- height = 20,
+        -- col = 0,           -- Leftmost position
+        -- row = 0,
+        split = 'left',
+        win = 0
 
-    -- Split the slug into lines
-    local lines = vim.split(slug, "\n", { plain = true })
+        -- anchor = "W",      -- Changed from 'W' to "W"
+        -- style = 'vertical',
+        -- focusable = true,
+        -- border = 'rounded'
+    }
+    
+    -- Open window 
+    -- Parameters: ~
+    --   • {buffer}  Buffer to display, or 0 for current buffer
+    --   • {enter}   Enter the window (make it the current window)
+    --   • {config}  Map defining the window configuration. Keys:
+    local winnr = vim.api.nvim_open_win(bufnr, false, opts)
+    
+    -- Configure terminal settings
+    vim.api.nvim_buf_set_name(bufnr, "terminal://" .. vim.fn.getcwd())
 
-    -- Create or open the file in a new buffer
-    local buf = vim.fn.bufadd(file_path)
-    vim.fn.bufload(buf) -- Load the buffer
-    vim.api.nvim_buf_set_option(buf, "buftype", "") -- Ensure it's a normal file buffer
+    -- Enter terminal mode and setup prompt
+    vim.api.nvim_buf_call(bufnr, function()
+        -- Start terminal
+        vim.cmd.startinsert()
 
-    -- Set the content of the buffer
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+        -- Add slug content
+        local lines = vim.split(slug, "\n", { plain = true })
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
-    -- Save the buffer to the file
-    vim.api.nvim_buf_call(buf, function()
-        vim.cmd("w") -- Write the buffer to the file
+        -- Move cursor to end
+        vim.cmd([[normal! G]])
     end)
-
-    -- Optionally, close the buffer after saving
-    vim.api.nvim_buf_delete(buf, { force = true })
 end
 
 return utils
