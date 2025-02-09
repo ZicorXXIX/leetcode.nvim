@@ -48,6 +48,7 @@ local function fetch_question(slug)
 
   local decoded = vim.json.decode(response.body)
   local content = decoded.data.question.content
+  local codeSnippets =  decoded.data.question.codeSnippets
 
   local entities = {
     { "amp", "&" },
@@ -77,9 +78,19 @@ local function fetch_question(slug)
     content = string.gsub(content, "&" .. entity[1] .. ";", entity[2])
   end
 
-  print(content)
+  print(vim.inspect(codeSnippets[1]))
 
-  utils.create_file(content)
+  utils.create_file(content, codeSnippets)
+end
+
+local function interpret()
+    local endpoint = "https://leetcode.com/problems/two-sum/interpret_solution/"
+    local response = curl.post( endpoint , {
+        headers = headers,
+        body = vim.fn.json_encode({ query = query, variables = variables })
+    })
+
+    local decoded = vim.json.decode(response.body)
 end
 
 fetch_question("add-two-numbers")
