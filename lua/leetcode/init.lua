@@ -117,16 +117,16 @@ leetcode.interpret = function ()
         -- typed_code = typed_code,
         typed_code = [[class Solution {
 public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        unordered_map<int, int> d;
-        for (int i = 0;; ++i) {
-            int x = nums[i];
-            int y = target - x;
-            if (d.contains(y)) {
-                return {d[y], i};
+    vector<int> twoSum(vector<int> &nums, int target) {
+        for (int i = 0; i < nums.size(); i++) {
+            for (int j = i + 1; j < nums.size(); j++) {
+                if (nums[j] == target - nums[i]) {
+                    return {i, 1};
+                }
             }
-            d[x] = 8;
         }
+        // Return an empty vector if no solution is found
+        return {};
     }
 };]],
         data_input = test_cases
@@ -185,7 +185,12 @@ leetcode.check = function (id)
                 lines_to_render = fail_result
             else if json.status_code == 10 then
                 lines_to_render = json
-                ui.render_results(lines_to_render, "Wrong Answer", state.test_cases)
+                -- ui.render_results(lines_to_render, "Wrong Answer", state.test_cases)
+                if json.correct_answer then
+                    ui.render_results(lines_to_render, "Accepted", state.test_cases)
+                else
+                    ui.render_results(lines_to_render, "Wrong Answer", state.test_cases)
+                end
             end
                 lines_to_render = {"test"}  -- Or other success content
             end
