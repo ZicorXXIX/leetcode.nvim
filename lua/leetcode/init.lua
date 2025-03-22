@@ -1,3 +1,4 @@
+print("Attempting to load leetcode module")
 local leetcode = {}
 
 leetcode.setup = function (opts)
@@ -51,6 +52,7 @@ leetcode.fetch_question = function(slug)
   })
 
   local decoded = vim.json.decode(response.body)
+  print(decoded)
   local content = decoded.data.question.content
   local codeSnippets =  decoded.data.question.codeSnippets
   state.test_cases = decoded.data.question.exampleTestcaseList
@@ -200,7 +202,7 @@ leetcode.check = function (id)
     end
 end
 
- leetcode.fetch_question("two-sum")
- leetcode.interpret()
+ -- leetcode.fetch_question("two-sum")
+ -- leetcode.interpret()
  -- ui.render_results({"test"})
 return leetcode
