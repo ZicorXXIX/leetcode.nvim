@@ -202,7 +202,7 @@ leetcode.check = function (id)
     end
 end
 
- -- leetcode.fetch_question("two-sum")
+ leetcode.fetch_question("two-sum")
  -- leetcode.interpret()
  -- ui.render_results({"test"})
 return leetcode

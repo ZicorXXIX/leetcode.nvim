@@ -1,7 +1,10 @@
-
 local utils = {}
 
-utils.create_file = function(slug, codeSnippets)
+-- Import custom highlight functions
+local custom_highlight = require("leetcode.custom_highlight")
+
+utils.create_file = function(content, codeSnippets)
+    -- Create markdown buffer
     local markdown_bufnr = vim.api.nvim_create_buf(false, true)
 
     -- Set up buffer options
@@ -20,22 +23,23 @@ utils.create_file = function(slug, codeSnippets)
     local winnr = vim.api.nvim_open_win(markdown_bufnr, false, opts)
 
     -- Configure buffer settings with markdown content
-    vim.api.nvim_buf_set_name(markdown_bufnr, "terminal://" .. vim.fn.getcwd())
+    vim.api.nvim_buf_set_name(markdown_bufnr, "leetcode://problem")
     vim.api.nvim_buf_set_option(markdown_bufnr, 'filetype', 'html')
 
-    -- Set markdown content (slug)
+    -- Process and set content with custom highlighting
     vim.api.nvim_buf_call(markdown_bufnr, function()
         vim.api.nvim_buf_set_option(markdown_bufnr, 'modifiable', true)
-        local markdown_lines = vim.split(slug, "\n", { plain = true })
-        vim.api.nvim_buf_set_lines(markdown_bufnr, 0, -1, false, markdown_lines)
+        local processed = custom_highlight.ProcessHTMLContent(content)
+        vim.api.nvim_buf_set_lines(markdown_bufnr, 0, -1, false, vim.split(processed.text, '\n'))
         vim.api.nvim_buf_set_option(markdown_bufnr, 'modifiable', false)
+        
+        -- Apply custom highlights
+        custom_highlight.DefineCustomHighlights()
+        custom_highlight.ApplyCustomHighlights(markdown_bufnr, processed.highlights)
     end)
 
-    -- Force Markview to render by making it current temporarily
-    vim.api.nvim_set_current_buf(markdown_bufnr)
-
     -- Create and load the second buffer for cpp content
-    local cpp_bufnr = vim.fn.bufadd("filename.cpp")
+    local cpp_bufnr = vim.fn.bufadd("solution.cpp")
     vim.fn.bufload(cpp_bufnr)
 
     -- Set up second buffer options
@@ -44,7 +48,7 @@ utils.create_file = function(slug, codeSnippets)
     vim.api.nvim_buf_set_option(cpp_bufnr, 'readonly', true)
     vim.api.nvim_buf_set_option(cpp_bufnr, 'filetype', 'cpp')
 
-    -- Set cpp content (codeSnippets[1].code)
+    -- Set cpp content with syntax highlighting
     vim.api.nvim_buf_set_option(cpp_bufnr, 'modifiable', true)
     local cpp_lines = {}
     for line in codeSnippets[1].code:gmatch("([^\n]*)\n?") do
@@ -56,6 +60,5 @@ utils.create_file = function(slug, codeSnippets)
     -- Set the cpp buffer as current
     vim.api.nvim_set_current_buf(cpp_bufnr)
 end
-
 
 return utils
