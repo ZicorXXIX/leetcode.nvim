@@ -12,15 +12,29 @@ utils.create_file = function(content, codeSnippets)
     vim.api.nvim_buf_set_option(markdown_bufnr, 'swapfile', false)
     vim.api.nvim_buf_set_option(markdown_bufnr, 'modifiable', false)
     vim.api.nvim_buf_set_option(markdown_bufnr, 'readonly', true)
+    vim.api.nvim_buf_set_option(markdown_bufnr, 'number', false)
+    vim.api.nvim_buf_set_option(markdown_bufnr, 'relativenumber', false)
+    vim.api.nvim_buf_set_option(markdown_bufnr, 'signcolumn', 'no')
+    vim.api.nvim_buf_set_option(markdown_bufnr, 'foldcolumn', '0')
 
-    -- Create window configuration
-    local opts = {
-        split = 'left',
-        win = 0
-    }
+    -- Create a vertical split
+    vim.cmd('vsplit')
+    
+    -- Get the window ID of the new split
+    local winnr = vim.api.nvim_get_current_win()
+    
+    -- Set the buffer in the window
+    vim.api.nvim_win_set_buf(winnr, markdown_bufnr)
+    
+    -- Set window width to 50% of total width
+    local width = math.floor(vim.o.columns * 0.5)
+    vim.api.nvim_win_set_width(winnr, width)
 
-    -- Open window with the first buffer
-    local winnr = vim.api.nvim_open_win(markdown_bufnr, false, opts)
+    -- Set window-local options for wrapping
+    vim.wo[winnr].wrap = true
+    vim.wo[winnr].linebreak = true
+    vim.wo[winnr].breakindent = true
+    vim.wo[winnr].breakindentopt = 'shift:2'
 
     -- Configure buffer settings with markdown content
     vim.api.nvim_buf_set_name(markdown_bufnr, "leetcode://problem")
@@ -39,25 +53,25 @@ utils.create_file = function(content, codeSnippets)
     end)
 
     -- Create and load the second buffer for cpp content
-    local cpp_bufnr = vim.fn.bufadd("solution.cpp")
-    vim.fn.bufload(cpp_bufnr)
+    local cpp_bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(cpp_bufnr, "leetcode://solution.cpp")
 
     -- Set up second buffer options
-    vim.api.nvim_buf_set_option(cpp_bufnr, "buftype", "")
-    vim.api.nvim_buf_set_option(cpp_bufnr, 'modifiable', false)
-    vim.api.nvim_buf_set_option(cpp_bufnr, 'readonly', true)
+    vim.api.nvim_buf_set_option(cpp_bufnr, "buftype", "nofile")
+    vim.api.nvim_buf_set_option(cpp_bufnr, "bufhidden", "wipe")
+    vim.api.nvim_buf_set_option(cpp_bufnr, "swapfile", false)
+    vim.api.nvim_buf_set_option(cpp_bufnr, 'modifiable', true)
     vim.api.nvim_buf_set_option(cpp_bufnr, 'filetype', 'cpp')
 
     -- Set cpp content with syntax highlighting
-    vim.api.nvim_buf_set_option(cpp_bufnr, 'modifiable', true)
     local cpp_lines = {}
     for line in codeSnippets[1].code:gmatch("([^\n]*)\n?") do
         table.insert(cpp_lines, line)
     end
     vim.api.nvim_buf_set_lines(cpp_bufnr, 0, -1, false, cpp_lines)
-    vim.api.nvim_buf_set_option(cpp_bufnr, 'modifiable', false)
 
-    -- Set the cpp buffer as current
+    -- Move to the rightmost window and set the cpp buffer
+    vim.cmd('wincmd l')
     vim.api.nvim_set_current_buf(cpp_bufnr)
 end
 

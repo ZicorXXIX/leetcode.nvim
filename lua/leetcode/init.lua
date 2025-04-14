@@ -116,21 +116,21 @@ leetcode.interpret = function ()
     local query = {
         ["lang"] = "cpp",
         question_id = state.questionId,
-        -- typed_code = typed_code,
-        typed_code = [[class Solution {
-public:
-    vector<int> twoSum(vector<int> &nums, int target) {
-        for (int i = 0; i < nums.size(); i++) {
-            for (int j = i + 1; j < nums.size(); j++) {
-                if (nums[j] == target - nums[i]) {
-                    return {i, 1};
-                }
-            }
-        }
-        // Return an empty vector if no solution is found
-        return {};
-    }
-};]],
+        typed_code = typed_code,
+--         typed_code = [[class Solution {
+-- public:
+--     vector<int> twoSum(vector<int> &nums, int target) {
+--         for (int i = 0; i < nums.size(); i++) {
+--             for (int j = i + 1; j < nums.size(); j++) {
+--                 if (nums[j] == target - nums[i]) {
+--                     return {i, 1};
+--                 }
+--             }
+--         }
+--         // Return an empty vector if no solution is found
+--         return {};
+--     }
+-- };]],
         data_input = test_cases
     }
     print(vim.inspect(query))
@@ -202,7 +202,22 @@ leetcode.check = function (id)
     end
 end
 
- leetcode.fetch_question("two-sum")
- -- leetcode.interpret()
- -- ui.render_results({"test"})
+-- Create user commands
+vim.api.nvim_create_user_command("LeetCodeFetch", function(opts)
+    leetcode.fetch_question(opts.args)
+end, { nargs = 1, desc = "Fetch a LeetCode problem by slug" })
+
+vim.api.nvim_create_user_command("LeetCodeRun", function()
+    leetcode.interpret()
+end, { desc = "Run the current solution" })
+
+vim.api.nvim_create_user_command("LeetCodeCheck", function(opts)
+    leetcode.check(opts.args)
+end, { nargs = 1, desc = "Check submission status" })
+
+-- Set up key mappings
+vim.api.nvim_set_keymap('n', '<leader>lf', ':LeetCodeFetch ', { noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<leader>lr', ':LeetCodeRun<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>lc', ':LeetCodeCheck ', { noremap = true, silent = false })
+
 return leetcode

@@ -27,6 +27,12 @@ if not sorters_ok then
   return
 end
 
+local actions_ok, actions = pcall(require, 'telescope.actions')
+if not actions_ok then
+  print("Failed to load telescope.actions module.")
+  return
+end
+
 -- Ensure plenary.curl is loaded correctly
 local curl_ok, curl = pcall(require, 'plenary.curl')
 if not curl_ok then
@@ -59,7 +65,13 @@ local function fetch_leetcode_problems()
       for _, pair in ipairs(data.stat_status_pairs) do
         local title = pair.stat.question__title
         local difficulty = pair.difficulty.level
-        table.insert(problems, { title = title, difficulty = difficulty, slug = pair.stat.question__title_slug })
+        local frontend_id = pair.stat.frontend_question_id
+        table.insert(problems, { 
+          title = title, 
+          difficulty = difficulty, 
+          slug = pair.stat.question__title_slug,
+          frontend_id = frontend_id
+        })
       end
       vim.fn.writefile({vim.fn.json_encode(problems)}, cache_file)
       return problems
@@ -89,11 +101,20 @@ local function load_problem(slug)
   local leetcode = require('leetcode')
   print(slug)
   leetcode.fetch_question(slug)
-  leetcode.interpret()
+end
+
+-- Define highlight groups for difficulties
+local function setup_highlights()
+  vim.cmd([[
+    highlight! LeetCodeEasy guifg=#98c379 gui=bold
+    highlight! LeetCodeMedium guifg=#e5c07b gui=bold
+    highlight! LeetCodeHard guifg=#e06c75 gui=bold
+  ]])
 end
 
 -- Telescope picker for names
 local function names_picker()
+  setup_highlights()
   local problems = fetch_names()
   if not problems or #problems == 0 then
     print("No problems available to display")
@@ -106,31 +127,72 @@ local function names_picker()
       results = problems,
       entry_maker = function(entry)
         local difficulty = ""
+        local hl_group = ""
         if entry.difficulty == 1 then
           difficulty = "Easy"
+          hl_group = "LeetCodeEasy"
         elseif entry.difficulty == 2 then
           difficulty = "Medium"
+          hl_group = "LeetCodeMedium"
         elseif entry.difficulty == 3 then
           difficulty = "Hard"
+          hl_group = "LeetCodeHard"
         end
 
+        local display = string.format("%s. %s [%s]", 
+          entry.frontend_id,
+          entry.title,
+          difficulty
+        )
+
         return {
-          value = entry.slug,  -- Use the problem slug to fetch the problem later
-          display = entry.title .. " (" .. difficulty .. ")",
-          ordinal = entry.title,  -- For fuzzy filtering
+          value = entry.slug,
+          display = display,
+          ordinal = entry.title,
+          difficulty = difficulty,
+          hl_group = hl_group,
         }
       end,
     }),
     sorter = sorters.get_generic_fuzzy_sorter(),
     attach_mappings = function(prompt_bufnr, map)
-      local actions = require('telescope.actions')
       map('i', '<CR>', function()
         local selected = require('telescope.actions.state').get_selected_entry()
-        actions.close(prompt_bufnr)  -- Close the picker first
-        load_problem(selected.value) -- Then load the problem
+        actions.close(prompt_bufnr)
+        load_problem(selected.value)
       end)
       return true
     end,
+    previewer = false,
+    default_selection_index = 1,
+    layout_config = {
+      width = 0.8,
+      height = 0.8,
+    },
+    results_title = "LeetCode Problems",
+    selection_strategy = "reset",
+    sorting_strategy = "ascending",
+    border = true,
+    borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+    winblend = 0,
+    entry_prefix = "  ",
+    initial_mode = "insert",
+    scroll_strategy = "cycle",
+    selection_caret = "  ",
+    get_status_text = function(self)
+      return ""
+    end,
+    on_complete = {
+      function()
+        vim.cmd([[
+          augroup LeetCodePicker
+            autocmd!
+            autocmd BufEnter <buffer> highlight! link TelescopeResultsNormal NormalFloat
+            autocmd BufEnter <buffer> highlight! link TelescopeBorder NormalFloat
+          augroup END
+        ]])
+      end
+    }
   }):find()
 end
 
